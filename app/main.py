@@ -11,7 +11,7 @@ from schema import (
     DocumentSearchRequest, DocumentSearchResponse
 )
 from chat import Chat
-from chromadb import ChromaService
+from chroma_manager import ChromaService
 from utils import (
     create_chat_session, 
     save_message, 
