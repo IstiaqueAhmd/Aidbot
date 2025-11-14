@@ -8,7 +8,7 @@ from database import get_db
 from schema import (
     ChatRequest, ChatResponse, ChatHistory, SessionList, ChatSession,
     DocumentUploadResponse, DocumentDeleteResponse, DocumentListResponse,
-    DocumentSearchRequest, DocumentSearchResponse
+    DocumentSearchRequest, DocumentSearchResponse, TitleUpdateRequest
 )
 from chat import Chat
 from chroma_manager import ChromaService
@@ -159,11 +159,11 @@ async def delete_session(session_id: str, user_id: str, db: Session = Depends(ge
             detail=f"Error deleting session: {str(e)}"
         )
 
-@app.put("/sessions/{session_id}/title")
-async def update_title(session_id: str, title: str, user_id: str, db: Session = Depends(get_db)):
+@app.put("/sessions/update_title")
+async def update_title(request: TitleUpdateRequest, db: Session = Depends(get_db)):
     """Update session title"""
     try:
-        success = update_session_title(db, session_id, user_id, title)
+        success = update_session_title(db, request.session_id, request.user_id, request.title)
         if success:
             return {"message": "Title updated successfully"}
         else:
