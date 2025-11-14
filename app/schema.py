@@ -33,6 +33,11 @@ class ChatHistory(BaseModel):
 class SessionList(BaseModel):
     sessions: List[ChatSession]
 
+class TitleUpdateRequest(BaseModel):
+    session_id: str
+    title: str
+    user_id: str
+
 # Document-related schemas
 class DocumentUploadResponse(BaseModel):
     doc_id: str
