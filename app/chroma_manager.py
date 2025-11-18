@@ -28,9 +28,9 @@ class ChromaService:
             metadata={"hnsw:space": "cosine"}
         )
     
-    def _generate_doc_id(self, content: str, filename: str) -> str:
-        """Generate unique document ID based on content and filename"""
-        hash_input = f"{filename}:{content[:1000]}"
+    def _generate_doc_id(self, content: str, filename: str, user_id: str) -> str:
+        """Generate unique document ID based on content, filename, and user_id"""
+        hash_input = f"{filename}:{user_id}:{content[:1000]}"
         return hashlib.sha256(hash_input.encode()).hexdigest()
     
     def _extract_text_from_pdf(self, file_content: bytes) -> str:
@@ -97,13 +97,8 @@ class ChromaService:
             if not text:
                 raise ValueError("No text could be extracted from the document")
             
-            # Generate document ID
-            doc_id = self._generate_doc_id(text, filename)
-            
-            # Check if document already exists
-            existing = self.collection.get(ids=[doc_id])
-            if existing['ids']:
-                raise ValueError("Document already exists in the database")
+            # Generate document ID (includes user_id for uniqueness)
+            doc_id = self._generate_doc_id(text, filename, user_id)
             
             # Chunk the text
             chunks = self._chunk_text(text)
@@ -144,7 +139,7 @@ class ChromaService:
             raise Exception(f"Error processing document: {str(e)}")
     
     def delete_document(self, doc_id: str, user_id: Optional[str] = None) -> Dict:
-        """Delete document and all its chunks from ChromaDB"""
+        """Delete document and all its chunks from ChromaDB (accessible to all users)"""
         try:
             # Get all chunks for this document
             results = self.collection.get(
@@ -154,11 +149,7 @@ class ChromaService:
             if not results['ids']:
                 raise ValueError("Document not found")
             
-            # Verify user ownership if user_id provided
-            if user_id:
-                chunk_user_id = results['metadatas'][0].get('user_id')
-                if chunk_user_id != user_id:
-                    raise PermissionError("You don't have permission to delete this document")
+            # No permission check - any user can delete any document
             
             # Delete all chunks
             self.collection.delete(
@@ -180,14 +171,12 @@ class ChromaService:
         user_id: Optional[str] = None,
         n_results: int = 5
     ) -> List[Dict]:
-        """Search for relevant document chunks"""
+        """Search for relevant document chunks (searches all documents)"""
         try:
-            where_filter = {"user_id": user_id} if user_id else None
-            
+            # No user filtering - search all documents
             results = self.collection.query(
                 query_texts=[query],
-                n_results=n_results,
-                where=where_filter
+                n_results=n_results
             )
             
             if not results['documents'][0]:
@@ -208,13 +197,10 @@ class ChromaService:
             raise Exception(f"Error searching documents: {str(e)}")
     
     def list_documents(self, user_id: Optional[str] = None) -> List[Dict]:
-        """List all documents for a user"""
+        """List all documents (accessible to all users)"""
         try:
-            where_filter = {"user_id": user_id} if user_id else None
-            
-            results = self.collection.get(
-                where=where_filter
-            )
+            # No user filtering - list all documents
+            results = self.collection.get()
             
             # Group by doc_id to get unique documents
             documents = {}
