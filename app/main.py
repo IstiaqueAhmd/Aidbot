@@ -72,8 +72,21 @@ async def chat_endpoint(request: ChatRequest, db: Session = Depends(get_db)):
         # Get relevant context from documents if available
         rag_context = None
         try:
+            # Build a richer query from recent conversation context
+            query_for_rag = request.message
+            if history:
+                # Include last few messages for better context retrieval
+                recent_messages = history[-3:] if len(history) > 3 else history
+                context_parts = []
+                for msg in recent_messages:
+                    if msg.get("role") == "user":
+                        context_parts.append(msg.get("content", ""))
+                # Combine recent context with current message
+                if context_parts:
+                    query_for_rag = " ".join(context_parts) + " " + request.message
+            
             rag_context = document_service.get_context_for_query(
-                query=request.message,
+                query=query_for_rag,
                 user_id=request.user_id,
                 n_results=3
             )
