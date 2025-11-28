@@ -197,7 +197,7 @@ async def update_title(request: TitleUpdateRequest, db: Session = Depends(get_db
 @app.post("/documents/upload", response_model=DocumentUploadResponse)
 async def upload_document(
     file: UploadFile = File(...),
-    user_id: str = Form(default="anonymous")
+    user_id: str = Form(default="admin")
 ):
     """
     Upload and process a document for RAG.
